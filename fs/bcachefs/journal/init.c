@@ -535,8 +535,13 @@ int bch2_dev_journal_init(struct bch_dev *ca, struct bch_sb *sb)
 		 * performance can be sensitive to anything that affects journal
 		 * pipelining.
 		 */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 		ja->bio[i] = kvzalloc(struct_size(ja->bio[i], bio.bi_inline_vecs,
 				     nr_bvecs), GFP_KERNEL);
+# else
+		ja->bio[i] = kvzalloc(sizeof(*ja->bio[i]) +
+				     sizeof(struct bio_vec) * nr_bvecs, GFP_KERNEL);
+# endif
 		if (!ja->bio[i])
 			return bch_err_throw(c, ENOMEM_dev_journal_init);
 
