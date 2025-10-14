@@ -1379,7 +1379,11 @@ int bch2_journal_read(struct bch_fs *c,
 					  BCH_DEV_READ_REF_journal_read))
 			closure_call(&ca->journal.read,
 				     bch2_journal_read_device,
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 				     system_unbound_wq,
+# else
+				     system_dfl_wq,
+# endif
 				     &jlist.cl);
 		else
 			degraded = true;

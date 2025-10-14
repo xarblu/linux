@@ -22,6 +22,7 @@
 
 #include <linux/prefetch.h>
 #include <linux/sort.h>
+#include <linux/version.h>
 
 static int bch2_btree_write_buffer_journal_flush(struct journal *,
 				struct journal_entry_pin *, u64);
@@ -824,7 +825,11 @@ int bch2_journal_keys_to_write_buffer_end(struct bch_fs *c, struct journal_keys_
 
 	if (bch2_btree_write_buffer_should_flush(c) &&
 	    __enumerated_ref_tryget(&c->writes, BCH_WRITE_REF_btree_write_buffer) &&
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 	    !queue_work(system_unbound_wq, &c->btree_write_buffer.flush_work))
+# else
+	    !queue_work(system_dfl_wq, &c->btree_write_buffer.flush_work))
+# endif
 		enumerated_ref_put(&c->writes, BCH_WRITE_REF_btree_write_buffer);
 
 	if (dst->wb == &wb->flushing)
