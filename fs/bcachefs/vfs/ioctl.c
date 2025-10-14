@@ -18,6 +18,7 @@
 #include <linux/mount.h>
 #include <linux/namei.h>
 #include <linux/security.h>
+#include <linux/version.h>
 #include <linux/writeback.h>
 
 #define FS_IOC_GOINGDOWN	     _IOR('X', 125, __u32)
@@ -257,7 +258,11 @@ static long __bch2_ioctl_subvolume_create(struct bch_fs *c, struct file *filp,
 		snapshot_src = inode_inum(to_bch_ei(src_path.dentry->d_inode));
 	}
 
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 	dst_dentry = user_path_create(arg.dirfd,
+# else
+	dst_dentry = start_creating_user_path(arg.dirfd,
+# endif
 			(const char __user *)(unsigned long)arg.dst_ptr,
 			&dst_path, lookup_flags);
 	error = PTR_ERR_OR_ZERO(dst_dentry);
@@ -316,7 +321,11 @@ static long __bch2_ioctl_subvolume_create(struct bch_fs *c, struct file *filp,
 	d_instantiate(dst_dentry, &inode->v);
 	fsnotify_mkdir(dir, dst_dentry);
 err3:
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 	done_path_create(&dst_path, dst_dentry);
+# else
+	end_creating_path(&dst_path, dst_dentry);
+# endif
 err2:
 	if (arg.src_ptr)
 		path_put(&src_path);
@@ -363,7 +372,11 @@ static long __bch2_ioctl_subvolume_destroy(struct bch_fs *c, struct file *filp,
 	if (arg.flags)
 		return -EINVAL;
 
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 	victim = user_path_locked_at(arg.dirfd, name, &path);
+# else
+	victim = start_removing_user_path_at(arg.dirfd, name, &path);
+# endif
 	if (IS_ERR(victim))
 		return PTR_ERR(victim);
 
@@ -380,9 +393,13 @@ static long __bch2_ioctl_subvolume_destroy(struct bch_fs *c, struct file *filp,
 		d_invalidate(victim);
 	}
 err:
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 	inode_unlock(dir);
 	dput(victim);
 	path_put(&path);
+# else
+	end_removing_path(&path, victim);
+# endif
 	return ret;
 }
 
