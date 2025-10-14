@@ -16,6 +16,7 @@
 #include <linux/ratelimit.h>
 #include <linux/slab.h>
 #include <linux/sort.h>
+#include <linux/version.h>
 #include <linux/vmalloc.h>
 #include <linux/workqueue.h>
 
@@ -60,7 +61,11 @@ static inline void *bch2_kvmalloc_noprof(size_t n, gfp_t flags)
 {
 	void *p = unlikely(n >= INT_MAX)
 		? vmalloc_noprof(n)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 		: kvmalloc_noprof(n, flags & ~__GFP_ZERO);
+# else
+		: kvmalloc_node_align_noprof(n, 1, flags & ~__GFP_ZERO, NUMA_NO_NODE);
+# endif
 	if (p && (flags & __GFP_ZERO))
 		memset(p, 0, n);
 	return p;

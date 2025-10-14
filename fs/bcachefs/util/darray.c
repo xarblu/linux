@@ -3,6 +3,7 @@
 #include <linux/log2.h>
 #include <linux/rcupdate.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 #include <linux/vmalloc.h>
 #include "darray.h"
 
@@ -24,7 +25,11 @@ int __bch2_darray_resize_noprof(darray_char *d, size_t element_size, size_t new_
 
 		void *old = d->data;
 		void *new = likely(bytes < INT_MAX)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 			? kvmalloc_noprof(bytes, gfp)
+# else
+			? kvmalloc_node_align_noprof(bytes, 1, gfp, NUMA_NO_NODE)
+# endif
 			: vmalloc_noprof(bytes);
 		if (!new)
 			return -ENOMEM;
