@@ -84,6 +84,7 @@
 #include <linux/percpu.h>
 #include <linux/random.h>
 #include <linux/sysfs.h>
+#include <linux/version.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kent Overstreet <kent.overstreet@gmail.com>");
@@ -791,13 +792,29 @@ int bch2_fs_init_rw(struct bch_fs *c)
 	if (!(c->btree_update_wq = alloc_workqueue("bcachefs",
 				WQ_HIGHPRI|WQ_FREEZABLE|WQ_MEM_RECLAIM|WQ_UNBOUND, 512)) ||
 	    !(c->btree_write_complete_wq = alloc_workqueue("bcachefs_btree_write_complete",
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 				WQ_HIGHPRI|WQ_FREEZABLE|WQ_MEM_RECLAIM, 1)) ||
+# else
+				WQ_HIGHPRI|WQ_FREEZABLE|WQ_MEM_RECLAIM|WQ_PERCPU, 1)) ||
+# endif
 	    !(c->copygc_wq = alloc_workqueue("bcachefs_copygc",
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 				WQ_HIGHPRI|WQ_FREEZABLE|WQ_MEM_RECLAIM|WQ_CPU_INTENSIVE, 1)) ||
+# else
+				WQ_HIGHPRI|WQ_FREEZABLE|WQ_MEM_RECLAIM|WQ_CPU_INTENSIVE|WQ_PERCPU, 1)) ||
+# endif
 	    !(c->btree_write_submit_wq = alloc_workqueue("bcachefs_btree_write_sumit",
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 				WQ_HIGHPRI|WQ_FREEZABLE|WQ_MEM_RECLAIM, 1)) ||
+# else
+				WQ_HIGHPRI|WQ_FREEZABLE|WQ_MEM_RECLAIM|WQ_PERCPU, 1)) ||
+# endif
 	    !(c->write_ref_wq = alloc_workqueue("bcachefs_write_ref",
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 				WQ_FREEZABLE, 0)))
+# else
+				WQ_FREEZABLE|WQ_PERCPU, 0)))
+# endif
 		return bch_err_throw(c, ENOMEM_fs_other_alloc);
 
 	int ret = bch2_fs_btree_interior_update_init(c) ?:
