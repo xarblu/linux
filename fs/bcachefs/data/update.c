@@ -28,6 +28,7 @@
 #include "snapshots/subvolume.h"
 
 #include <linux/ioprio.h>
+#include <linux/version.h>
 
 static const char * const bch2_data_update_type_strs[] = {
 #define x(t, n, ...) [n] = #t,
@@ -710,8 +711,13 @@ static int __bch2_data_update_bios_init(struct data_update *m, struct bch_fs *c,
 	if (!m->bvecs)
 		return -ENOMEM;
 
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 	bio_init(&m->rbio.bio,		NULL, m->bvecs, nr_vecs, REQ_OP_READ);
 	bio_init(&m->op.wbio.bio,	NULL, m->bvecs, nr_vecs, 0);
+# else
+	bio_init_inline(&m->rbio.bio,		NULL, nr_vecs, REQ_OP_READ);
+	bio_init_inline(&m->op.wbio.bio,	NULL, nr_vecs, 0);
+# endif
 
 	if (bch2_bio_alloc_pages(&m->op.wbio.bio, buf_bytes, GFP_KERNEL)) {
 		kfree(m->bvecs);

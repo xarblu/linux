@@ -11,6 +11,8 @@
 #include "alloc/foreground.h"
 #include "btree/update.h"
 
+#include <linux/version.h>
+
 /* allocate journal on a device: */
 
 static int bch2_set_nr_journal_buckets_iter(struct bch_dev *ca, unsigned nr,
@@ -540,7 +542,11 @@ int bch2_dev_journal_init(struct bch_dev *ca, struct bch_sb *sb)
 
 		ja->bio[i]->ca = ca;
 		ja->bio[i]->buf_idx = i;
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 		bio_init(&ja->bio[i]->bio, NULL, ja->bio[i]->bio.bi_inline_vecs, nr_bvecs, 0);
+# else
+		bio_init_inline(&ja->bio[i]->bio, NULL, nr_bvecs, 0);
+# endif
 	}
 
 	ja->buckets = kcalloc(ja->nr, sizeof(u64), GFP_KERNEL);

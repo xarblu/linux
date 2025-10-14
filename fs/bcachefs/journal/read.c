@@ -19,6 +19,7 @@
 
 #include <linux/string_choices.h>
 #include <linux/sched/sysctl.h>
+#include <linux/version.h>
 
 void bch2_journal_pos_from_member_info_set(struct bch_fs *c)
 {
@@ -1080,7 +1081,11 @@ reread:
 			bio = bio_kmalloc(nr_bvecs, GFP_KERNEL);
 			if (!bio)
 				return bch_err_throw(c, ENOMEM_journal_read_bucket);
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 			bio_init(bio, ca->disk_sb.bdev, bio->bi_inline_vecs, nr_bvecs, REQ_OP_READ);
+# else
+			bio_init_inline(bio, ca->disk_sb.bdev, nr_bvecs, REQ_OP_READ);
+# endif
 
 			bio->bi_iter.bi_sector = offset;
 			bch2_bio_map(bio, buf->data, sectors_read << 9);

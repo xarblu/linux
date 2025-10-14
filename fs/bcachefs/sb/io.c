@@ -30,6 +30,7 @@
 #include <linux/backing-dev.h>
 #include <linux/sort.h>
 #include <linux/string_choices.h>
+#include <linux/version.h>
 
 struct bch2_metadata_version {
 	u16		version;
@@ -235,7 +236,11 @@ int bch2_sb_realloc(struct bch_sb_handle *sb, unsigned u64s)
 		if (!bio)
 			return -BCH_ERR_ENOMEM_sb_bio_realloc;
 
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 		bio_init(bio, NULL, bio->bi_inline_vecs, nr_bvecs, 0);
+# else
+		bio_init_inline(bio, NULL, nr_bvecs, 0);
+# endif
 
 		kfree(sb->bio);
 		sb->bio = bio;
