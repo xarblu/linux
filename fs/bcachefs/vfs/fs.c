@@ -333,7 +333,11 @@ repeat:
 			spin_unlock(&inode->v.i_lock);
 			return NULL;
 		}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,19,0)
 		if ((inode->v.i_state & (I_FREEING|I_WILL_FREE))) {
+#else
+		if ((inode_state_read(&inode->v) & (I_FREEING|I_WILL_FREE))) {
+#endif
 			if (!trans) {
 				__wait_on_freeing_inode(c, inode, inum);
 			} else {
@@ -397,7 +401,11 @@ retry:
 		 * only insert fully created inodes in the inode hash table. But
 		 * discard_new_inode() expects it to be set...
 		 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,19,0)
 		inode->v.i_state |= I_NEW;
+#else
+		inode_state_set_raw(&inode->v, I_NEW);
+#endif
 		/*
 		 * We don't want bch2_evict_inode() to delete the inode on disk,
 		 * we just raced and had another inode in cache. Normally new
@@ -1835,7 +1843,11 @@ static void bch2_evict_inode(struct inode *vinode)
 		write_inode_now(&inode->v, true);
 
 	if (IS_ENABLED(CONFIG_BCACHEFS_DEBUG) || !delete) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,19,0)
 		BUG_ON(inode->v.i_state & I_DIRTY);
+#else
+		BUG_ON(inode_state_read_once(&inode->v) & I_DIRTY);
+#endif
 
 		struct bch_inode_unpacked inode_u;
 		if (!is_bad_inode(&inode->v) &&
@@ -1916,8 +1928,13 @@ again:
 		if (!snapshot_list_has_id(s, inode->ei_inum.subvol))
 			continue;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,19,0)
 		if (!(inode->v.i_state & I_DONTCACHE) &&
 		    !(inode->v.i_state & I_FREEING) &&
+#else
+		if (!(inode_state_read_once(&inode->v) & I_DONTCACHE) &&
+		    !(inode_state_read_once(&inode->v) & I_FREEING) &&
+#endif
 		    igrab(&inode->v)) {
 			this_pass_clean = false;
 

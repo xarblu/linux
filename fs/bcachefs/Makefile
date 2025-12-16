@@ -111,6 +111,7 @@ bcachefs-y		:=			\
 	util/varint.o				\
 	vendor/bio_iov_iter.o			\
 	vendor/closure.o			\
+	vendor/mempool.o			\
 	vendor/min_heap.o			\
 	vfs/fiemap.o				\
 	vfs/fs.o				\

@@ -11,6 +11,8 @@
 #include "btree/write.h"
 #include "btree/write_buffer.h"
 
+#include "vendor/mempool.h"
+
 void bch2_fs_btree_exit(struct bch_fs *c)
 {
 	bch2_find_btree_nodes_exit(&c->btree.node_scan);
@@ -56,7 +58,7 @@ int bch2_fs_btree_init(struct bch_fs *c)
 			max(offsetof(struct btree_read_bio, bio),
 			    offsetof(struct btree_write_bio, wbio.bio)),
 			BIOSET_NEED_BVECS) ||
-	    mempool_init_kvmalloc_pool(&c->btree.bounce_pool, 1,
+	    bch2_mempool_init_kvmalloc_pool(&c->btree.bounce_pool, 1,
 				       c->opts.btree_node_size))
 		return bch_err_throw(c, ENOMEM_fs_other_alloc);
 

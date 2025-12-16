@@ -12,6 +12,8 @@
 
 #include "init/error.h"
 
+#include "vendor/mempool.h"
+
 #include <linux/lz4.h>
 #include <linux/zlib.h>
 #include <linux/zstd.h>
@@ -687,12 +689,12 @@ static int __bch2_fs_compress_init(struct bch_fs *c, u64 features)
 		return 0;
 
 	if (!mempool_initialized(&c->compress.bounce[READ]) &&
-	    mempool_init_kvmalloc_pool(&c->compress.bounce[READ],
+	    bch2_mempool_init_kvmalloc_pool(&c->compress.bounce[READ],
 				       1, c->opts.encoded_extent_max))
 		return bch_err_throw(c, ENOMEM_compression_bounce_read_init);
 
 	if (!mempool_initialized(&c->compress.bounce[WRITE]) &&
-	    mempool_init_kvmalloc_pool(&c->compress.bounce[WRITE],
+	    bch2_mempool_init_kvmalloc_pool(&c->compress.bounce[WRITE],
 				       1, c->opts.encoded_extent_max))
 		return bch_err_throw(c, ENOMEM_compression_bounce_write_init);
 
@@ -705,7 +707,7 @@ static int __bch2_fs_compress_init(struct bch_fs *c, u64 features)
 		if (mempool_initialized(&c->compress.workspace[i->type]))
 			continue;
 
-		if (mempool_init_kvmalloc_pool(
+		if (bch2_mempool_init_kvmalloc_pool(
 				&c->compress.workspace[i->type],
 				1, i->compress_workspace))
 			return bch_err_throw(c, ENOMEM_compression_workspace_init);
