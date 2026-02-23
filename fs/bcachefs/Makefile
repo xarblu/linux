@@ -214,9 +214,7 @@ ifndef BCACHEFS_DKMS
 	obj-$(CONFIG_MEAN_AND_VARIANCE_UNIT_TEST)   += util/mean_and_variance_test.o
 endif
 
-ifdef BCACHEFS_DKMS
-	bcachefs-y += module-version.o
-endif
+bcachefs-y += module-version.o
 
 # Rust support — optional, gated on CONFIG_RUST. The C side owns the module
 # entry points; mod.o is a member object compiled by the kernel's Rust rules
