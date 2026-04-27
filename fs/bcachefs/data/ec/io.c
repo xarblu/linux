@@ -24,18 +24,12 @@
 static void raid5_recov(unsigned disks, unsigned failed_idx,
 			size_t size, void **data)
 {
-	unsigned i = 2, nr;
-
 	BUG_ON(failed_idx >= disks);
 
 	swap(data[0], data[failed_idx]);
 	memcpy(data[0], data[1], size);
 
-	while (i < disks) {
-		nr = min_t(unsigned, disks - i, MAX_XOR_BLOCKS);
-		xor_blocks(nr, size, data[0], data + i);
-		i += nr;
-	}
+	xor_gen(data[0], data + 2, disks - 2, size);
 
 	swap(data[0], data[failed_idx]);
 }
