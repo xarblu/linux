@@ -12,7 +12,7 @@
 #include "vfs/io.h"
 #include "vfs/pagecache.h"
 
-#include <linux/pagevec.h>
+#include <linux/folio_batch.h>
 #include <linux/writeback.h>
 
 int bch2_filemap_get_contig_folios_d(struct address_space *mapping,
