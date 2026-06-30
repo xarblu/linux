@@ -2959,17 +2959,16 @@ void end_dirop(struct dentry *de)
 EXPORT_SYMBOL(end_dirop);
 
 /* does lookup, returns the object with parent locked */
-struct dentry *start_removing_path(const char *name, struct path *path)
+static struct dentry *__start_removing_path(int dfd, struct filename *name,
+					   struct path *path)
 {
-	CLASS(filename_kernel, filename)(name);
 	struct path parent_path __free(path_put) = {};
 	struct dentry *d;
 	struct qstr last;
 	enum last_type type;
 	int error;
 
-	error = filename_parentat(AT_FDCWD, filename, 0, &parent_path, &last,
-			&type);
+	error = filename_parentat(dfd, name, 0, &parent_path, &last, &type);
 	if (error)
 		return ERR_PTR(error);
 	if (unlikely(type != LAST_NORM))
@@ -3028,6 +3027,12 @@ struct dentry *kern_path_parent(const char *name, struct path *path)
 	path->dentry = no_free_ptr(parent_path.dentry);
 	path->mnt = no_free_ptr(parent_path.mnt);
 	return d;
+}
+
+struct dentry *start_removing_path(const char *name, struct path *path)
+{
+	CLASS(filename_kernel, filename)(name);
+	return __start_removing_path(AT_FDCWD, filename, path);
 }
 
 int kern_path(const char *name, unsigned int flags, struct path *path)
